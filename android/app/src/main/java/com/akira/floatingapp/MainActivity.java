@@ -11,7 +11,7 @@ public class MainActivity extends BridgeActivity {
     private static final int OVERLAY_PERMISSION_REQUEST_CODE = 1001;
 
     @Override
-    protected void onStart() {
+    public void onStart() {
         super.onStart();
 
         if (!Settings.canDrawOverlays(this)) {
@@ -30,7 +30,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == OVERLAY_PERMISSION_REQUEST_CODE) {
             if (Settings.canDrawOverlays(this)) {
