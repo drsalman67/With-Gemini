@@ -7,11 +7,19 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
@@ -23,58 +31,50 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import androidx.core.app.NotificationCompat;
-import android.content.pm.PackageManager;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.util.List;
 
 public class OverlayService extends Service {
 
     private WindowManager windowManager;
-    public static WebView overlayWebView; // Static so Notification Listener can access it
+    public static WebView overlayWebView;
     private WindowManager.LayoutParams params;
     private BroadcastReceiver batteryReceiver;
 
     @Override
     public void onCreate() {
         super.onCreate();
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel("overlay_channel", "Overlay Service", NotificationManager.IMPORTANCE_MIN);
+            NotificationChannel channel = new NotificationChannel("overlay_channel", "Akira System", NotificationManager.IMPORTANCE_MIN);
             getSystemService(NotificationManager.class).createNotificationChannel(channel);
         }
         startForeground(1, new NotificationCompat.Builder(this, "overlay_channel")
-                .setContentTitle("Akira Floating Mode")
-                .setContentText("System active")
-                .setSmallIcon(android.R.drawable.ic_dialog_info).build());
+                .setContentTitle("Akira Engine V1.3.0").setContentText("System active").setSmallIcon(android.R.drawable.ic_dialog_info).build());
 
         overlayWebView = new WebView(this);
         overlayWebView.setBackgroundColor(Color.TRANSPARENT);
         overlayWebView.getSettings().setJavaScriptEnabled(true);
         overlayWebView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
-        
         overlayWebView.addJavascriptInterface(new WebAppInterface(), "NativeBridge");
-
-        // CRITICAL UPDATE: Ab ye overlay file load karega
         overlayWebView.loadUrl("file:///android_asset/public/overlay.html");
 
-        // Box size thoda bada kiya Timer Strip ke liye
+        // SMART TOUCH AREA: Shuru mein size sirf button jitna (80dp) hoga
         DisplayMetrics metrics = getResources().getDisplayMetrics();
-        int size = (int) (300 * metrics.density); 
+        int initialSize = (int) (80 * metrics.density); 
 
         params = new WindowManager.LayoutParams(
-                size, size,
+                initialSize, initialSize,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                        | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT
         );
         params.gravity = Gravity.TOP | Gravity.START;
-        params.x = 0;
-        params.y = 200;
+        params.x = 0; params.y = 200;
 
         overlayWebView.setOnTouchListener(new View.OnTouchListener() {
             private int initialX, initialY;
             private float initialTouchX, initialTouchY;
-
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
@@ -95,7 +95,6 @@ public class OverlayService extends Service {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         windowManager.addView(overlayWebView, params);
 
-        // THE BATTERY RADAR: Background mein battery padh kar JS ko bhejna
         batteryReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -104,9 +103,7 @@ public class OverlayService extends Service {
                 int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
                 boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL;
                 float batteryPct = level * 100 / (float)scale;
-                
-                // WebView ko signal bhejna (Main Magic)
-                overlayWebView.evaluateJavascript("javascript:updateBattery(" + batteryPct + ", " + isCharging + ")", null);
+                overlayWebView.evaluateJavascript("javascript:if(typeof updateBattery === 'function') updateBattery(" + batteryPct + ", " + isCharging + ")", null);
             }
         };
         registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
@@ -121,36 +118,90 @@ public class OverlayService extends Service {
 
     @Override public IBinder onBind(Intent intent) { return null; }
 
+    // ====== THE GOD TIER BRIDGE ======
     class WebAppInterface {
         @JavascriptInterface
         public void performAction(String action) {
             if (action.equals("home")) {
-                Intent i = new Intent(Intent.ACTION_MAIN);
-                i.addCategory(Intent.CATEGORY_HOME);
-                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(i);
+                Intent i = new Intent(Intent.ACTION_MAIN); i.addCategory(Intent.CATEGORY_HOME); i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i);
             } else if (action.equals("settings")) {
-                Intent i = new Intent(Settings.ACTION_SETTINGS);
-                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(i);
-            } else if (action.equals("close")) {
-                stopSelf();
+                Intent i = new Intent(Settings.ACTION_SETTINGS); i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i);
             } else if (action.equals("search")) {
-                Intent i = new Intent(Intent.ACTION_WEB_SEARCH);
-                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(i);
+                Intent i = new Intent(Intent.ACTION_WEB_SEARCH); i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i);
             }
         }
 
-        // NEW POWER: Specific App Launcher
         @JavascriptInterface
         public void launchApp(String packageName) {
             PackageManager pm = getPackageManager();
             Intent intent = pm.getLaunchIntentForPackage(packageName);
-            if (intent != null) {
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(intent);
+            if (intent != null) { intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(intent); }
+        }
+
+        @JavascriptInterface
+        public void launchGemini() {
+            PackageManager pm = getPackageManager();
+            Intent intent = pm.getLaunchIntentForPackage("com.google.android.apps.bard");
+            if(intent == null) { intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://gemini.google.com")); }
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(intent);
+        }
+
+        @JavascriptInterface
+        public void closeOverlay() { stopSelf(); }
+        
+        // 1. DYNAMIC RESIZER (Invisible touch fix)
+        @JavascriptInterface
+        public void resizeWindow(int widthDp, int heightDp) {
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (overlayWebView != null && windowManager != null) {
+                    DisplayMetrics metrics = getResources().getDisplayMetrics();
+                    params.width = (int) (widthDp * metrics.density);
+                    params.height = (int) (heightDp * metrics.density);
+                    windowManager.updateViewLayout(overlayWebView, params);
+                }
+            });
+        }
+
+        // 2. SOS VIBRATOR
+        @JavascriptInterface
+        public void vibrateSOS() {
+            Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+            if (v != null) {
+                long[] pattern = {0, 150, 100, 150, 100, 150, 100, 400, 100, 400, 100, 400, 100, 150, 100, 150, 100, 150}; // S-O-S Pattern
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    v.vibrate(VibrationEffect.createWaveform(pattern, -1));
+                } else { v.vibrate(pattern, -1); }
             }
+        }
+
+        // 3. LIVE APP FETCHER
+        @JavascriptInterface
+        public String getApps() {
+            PackageManager pm = getPackageManager();
+            List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+            JSONArray list = new JSONArray();
+            for (ApplicationInfo packageInfo : packages) {
+                if (pm.getLaunchIntentForPackage(packageInfo.packageName) != null) {
+                    try {
+                        JSONObject obj = new JSONObject();
+                        obj.put("name", packageInfo.loadLabel(pm).toString());
+                        obj.put("pkg", packageInfo.packageName);
+                        list.put(obj);
+                    } catch(Exception e){}
+                }
+            }
+            return list.toString();
+        }
+
+        // 4. CROSS-MEMORY SETTINGS
+        @JavascriptInterface
+        public void saveSetting(String key, String value) {
+            getSharedPreferences("AkiraPrefs", MODE_PRIVATE).edit().putString(key, value).apply();
+        }
+
+        @JavascriptInterface
+        public String getSetting(String key, String defaultVal) {
+            return getSharedPreferences("AkiraPrefs", MODE_PRIVATE).getString(key, defaultVal);
         }
     }
 }

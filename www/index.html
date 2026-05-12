@@ -3,40 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Akira OP Systems</title>
+    <title>Akira V1.3.0</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1 class="title">AKIRA <span class="neon">ENGINE</span></h1>
-            <p class="subtitle">System Status: <span id="status-text" class="offline">OFFLINE</span></p>
+            <h1 class="title">AKIRA <span class="neon">V1.3.0</span></h1>
+            <p class="subtitle">Master Control Environment</p>
         </header>
 
         <div class="card">
-            <h2>Overlay Power</h2>
-            <label class="switch">
-                <input type="checkbox" id="master-switch">
-                <span class="slider round"></span>
-            </label>
-        </div>
-
-        <div class="card">
-            <h2>[+] Shortcut App Config</h2>
-            <p class="desc">Select the target application for the float menu.</p>
-            <button id="select-app-btn" class="cyber-btn">CHOOSE APP</button>
-            <p class="selected-app">Target: <span id="target-app-name">None</span></p>
-        </div>
-
-        <div class="card">
-            <h2>Aura Colors (Auto)</h2>
-            <div class="aura-preview">
-                <div class="dot green"></div> <p>> 50% Battery</p>
-                <div class="dot yellow"></div> <p>< 50% Battery</p>
-                <div class="dot red"></div> <p>< 20% Critical</p>
-                <div class="dot white rotating"></div> <p>Charging</p>
+            <h2>Core Engine</h2>
+            <div class="setting-row">
+                <span>Master Power</span>
+                <label class="switch"><input type="checkbox" id="master-switch"><span class="slider round"></span></label>
             </div>
+        </div>
+
+        <div class="card">
+            <h2>Button Customization</h2>
+            <div class="setting-row">
+                <span>Size (<span id="size-val">60</span>px)</span>
+                <input type="range" id="btn-size" min="40" max="100" value="60" class="cyber-slider">
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Aura & Pulse Systems</h2>
+            <div class="setting-row">
+                <span>Battery Color Sync</span>
+                <label class="switch"><input type="checkbox" id="battery-aura"><span class="slider round"></span></label>
+            </div>
+            <div class="setting-row">
+                <span>Charging FX (Lightning)</span>
+                <label class="switch"><input type="checkbox" id="charging-fx"><span class="slider round"></span></label>
+            </div>
+            <div class="setting-row">
+                <span>Notification Pulse Blink</span>
+                <label class="switch"><input type="checkbox" id="notif-pulse"><span class="slider round"></span></label>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>[+] Shortcut Target</h2>
+            <p class="desc">Select an app from your phone to launch from the float menu.</p>
+            <select id="app-selector" class="cyber-select">
+                <option value="">Loading Apps...</option>
+            </select>
         </div>
     </div>
     <script src="dashboard.js"></script>
