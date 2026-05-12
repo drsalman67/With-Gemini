@@ -15,7 +15,6 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
 public class OverlayService extends Service {
@@ -102,7 +101,7 @@ public class OverlayService extends Service {
         }
     }
 
-    @Nullable
+    
     @Override
     public IBinder onBind(Intent intent) {
         return null; 
