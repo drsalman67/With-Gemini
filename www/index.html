@@ -1,41 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Floating Overlay</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akira OP Systems</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
-  <div id="floating-btn" class="floating-btn" aria-label="Floating assistant button">
-    <span class="logo">G</span>
-  </div>
-  <div id="action-menu" class="action-menu hidden">
-    <button class="menu-item" data-action="home" style="--i:0" aria-label="Home">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 12l9-9 9 9"/><path d="M5 10v10a1 1 0 001 1h3v-6h6v6h3a1 1 0 001-1V10"/>
-      </svg>
-    </button>
-    <button class="menu-item" data-action="search" style="--i:1" aria-label="Search">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-      </svg>
-    </button>
-    <button class="menu-item" data-action="settings" style="--i:2" aria-label="Settings">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-      </svg>
-    </button>
-    <button class="menu-item" data-action="close" style="--i:3" aria-label="Close overlay">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M18 6L6 18M6 6l12 12"/>
-      </svg>
-    </button>
-  </div>
-  <div id="toast" class="toast hidden"></div>
-  <script src="script.js"></script>
+    <div class="container">
+        <header>
+            <h1 class="title">AKIRA <span class="neon">ENGINE</span></h1>
+            <p class="subtitle">System Status: <span id="status-text" class="offline">OFFLINE</span></p>
+        </header>
+
+        <div class="card">
+            <h2>Overlay Power</h2>
+            <label class="switch">
+                <input type="checkbox" id="master-switch">
+                <span class="slider round"></span>
+            </label>
+        </div>
+
+        <div class="card">
+            <h2>[+] Shortcut App Config</h2>
+            <p class="desc">Select the target application for the float menu.</p>
+            <button id="select-app-btn" class="cyber-btn">CHOOSE APP</button>
+            <p class="selected-app">Target: <span id="target-app-name">None</span></p>
+        </div>
+
+        <div class="card">
+            <h2>Aura Colors (Auto)</h2>
+            <div class="aura-preview">
+                <div class="dot green"></div> <p>> 50% Battery</p>
+                <div class="dot yellow"></div> <p>< 50% Battery</p>
+                <div class="dot red"></div> <p>< 20% Critical</p>
+                <div class="dot white rotating"></div> <p>Charging</p>
+            </div>
+        </div>
+    </div>
+    <script src="dashboard.js"></script>
 </body>
 </html>

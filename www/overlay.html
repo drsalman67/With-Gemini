@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+    <div id="float-container">
+        <div id="timer-strip" class="timer-strip">00:00.00</div>
+        
+        <div id="floating-btn" class="floating-btn aura-green">
+            <span class="logo">A</span>
+        </div>
+
+        <div id="action-menu" class="action-menu hidden">
+            <button class="menu-item" data-action="home" style="--i:0">H</button>
+            <button class="menu-item" data-action="shortcut" style="--i:1">+</button>
+            <button class="menu-item" data-action="timer" style="--i:2">⏱</button>
+            <button class="menu-item" data-action="settings" style="--i:3">⚙</button>
+            <button class="menu-item" data-action="close" style="--i:4">X</button>
+        </div>
+    </div>
+    <script src="overlay.js"></script>
+</body>
+</html>

@@ -3,9 +3,13 @@ package com.akira.floatingapp;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.os.BatteryManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.provider.Settings;
@@ -19,12 +23,14 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import androidx.core.app.NotificationCompat;
+import android.content.pm.PackageManager;
 
 public class OverlayService extends Service {
 
     private WindowManager windowManager;
-    private WebView overlayWebView;
+    public static WebView overlayWebView; // Static so Notification Listener can access it
     private WindowManager.LayoutParams params;
+    private BroadcastReceiver batteryReceiver;
 
     @Override
     public void onCreate() {
@@ -44,14 +50,14 @@ public class OverlayService extends Service {
         overlayWebView.getSettings().setJavaScriptEnabled(true);
         overlayWebView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
         
-        // THE BRIDGE: Ye line JS aur Java ko jodti hai
         overlayWebView.addJavascriptInterface(new WebAppInterface(), "NativeBridge");
 
-        overlayWebView.loadUrl("file:///android_asset/public/index.html");
+        // CRITICAL UPDATE: Ab ye overlay file load karega
+        overlayWebView.loadUrl("file:///android_asset/public/overlay.html");
 
-        // WINDOW SHRINKING: Box ka size 250dp set kar rahe hain taake baqi screen free rahe
+        // Box size thoda bada kiya Timer Strip ke liye
         DisplayMetrics metrics = getResources().getDisplayMetrics();
-        int size = (int) (250 * metrics.density);
+        int size = (int) (300 * metrics.density); 
 
         params = new WindowManager.LayoutParams(
                 size, size,
@@ -65,7 +71,6 @@ public class OverlayService extends Service {
         params.x = 0;
         params.y = 200;
 
-        // NATIVE DRAGGING: Ab Java window ko drag karega
         overlayWebView.setOnTouchListener(new View.OnTouchListener() {
             private int initialX, initialY;
             private float initialTouchX, initialTouchY;
@@ -74,10 +79,8 @@ public class OverlayService extends Service {
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        initialX = params.x;
-                        initialY = params.y;
-                        initialTouchX = event.getRawX();
-                        initialTouchY = event.getRawY();
+                        initialX = params.x; initialY = params.y;
+                        initialTouchX = event.getRawX(); initialTouchY = event.getRawY();
                         return false; 
                     case MotionEvent.ACTION_MOVE:
                         params.x = initialX + (int) (event.getRawX() - initialTouchX);
@@ -91,17 +94,33 @@ public class OverlayService extends Service {
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         windowManager.addView(overlayWebView, params);
+
+        // THE BATTERY RADAR: Background mein battery padh kar JS ko bhejna
+        batteryReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+                boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL;
+                float batteryPct = level * 100 / (float)scale;
+                
+                // WebView ko signal bhejna (Main Magic)
+                overlayWebView.evaluateJavascript("javascript:updateBattery(" + batteryPct + ", " + isCharging + ")", null);
+            }
+        };
+        registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (batteryReceiver != null) unregisterReceiver(batteryReceiver);
         if (overlayWebView != null) windowManager.removeView(overlayWebView);
     }
 
     @Override public IBinder onBind(Intent intent) { return null; }
 
-    // THE ACTION RECEIVER: Ye class buttons ko zinda karegi
     class WebAppInterface {
         @JavascriptInterface
         public void performAction(String action) {
@@ -120,6 +139,17 @@ public class OverlayService extends Service {
                 Intent i = new Intent(Intent.ACTION_WEB_SEARCH);
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(i);
+            }
+        }
+
+        // NEW POWER: Specific App Launcher
+        @JavascriptInterface
+        public void launchApp(String packageName) {
+            PackageManager pm = getPackageManager();
+            Intent intent = pm.getLaunchIntentForPackage(packageName);
+            if (intent != null) {
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
             }
         }
     }

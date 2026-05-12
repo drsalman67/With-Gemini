@@ -1,0 +1,60 @@
+:root {
+    --bg: #050a08; --neon: #00ffaa; --neon-dim: rgba(0, 255, 170, 0.2);
+    --card-bg: rgba(10, 25, 20, 0.8);
+}
+* { box-sizing: border-box; font-family: 'Orbitron', sans-serif; }
+body { 
+    background-color: var(--bg); color: white; margin: 0; padding: 20px;
+    background-image: radial-gradient(circle at 50% 0%, rgba(0,255,170,0.1) 0%, transparent 50%);
+}
+.container { max-width: 600px; margin: 0 auto; }
+header { text-align: center; margin-bottom: 40px; border-bottom: 1px solid var(--neon-dim); padding-bottom: 20px; }
+.title { font-size: 32px; margin: 0; font-weight: 900; letter-spacing: 2px; }
+.neon { color: var(--neon); text-shadow: 0 0 10px var(--neon); }
+.subtitle { font-size: 12px; color: #888; }
+.offline { color: #ff0055; text-shadow: 0 0 5px #ff0055; }
+.online { color: var(--neon); text-shadow: 0 0 5px var(--neon); }
+
+.card { 
+    background: var(--card-bg); border: 1px solid var(--neon-dim);
+    border-radius: 12px; padding: 20px; margin-bottom: 20px;
+    box-shadow: inset 0 0 20px rgba(0,255,170,0.05);
+    display: flex; flex-direction: column; gap: 10px;
+}
+h2 { margin: 0; font-size: 16px; color: var(--neon); text-transform: uppercase; }
+.desc { margin: 0; font-size: 11px; color: #aaa; }
+
+/* Cyber Toggle Switch */
+.switch { position: relative; display: inline-block; width: 60px; height: 34px; margin-left: auto; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #222; transition: .4s; border: 1px solid #444; }
+.slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 3px; bottom: 3px; background-color: #666; transition: .4s; }
+input:checked + .slider { background-color: var(--neon-dim); border-color: var(--neon); }
+input:checked + .slider:before { transform: translateX(26px); background-color: var(--neon); box-shadow: 0 0 10px var(--neon); }
+.slider.round { border-radius: 34px; }
+.slider.round:before { border-radius: 50%; }
+
+/* Cyber Button */
+.cyber-btn { 
+    background: transparent; border: 1px solid var(--neon); color: var(--neon);
+    padding: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase;
+    transition: 0.3s; margin-top: 10px; border-radius: 6px;
+}
+.cyber-btn:active { background: var(--neon); color: black; box-shadow: 0 0 15px var(--neon); }
+.selected-app { font-size: 12px; color: #fff; margin-top: 5px; }
+#target-app-name { color: var(--neon); font-weight: bold; }
+
+/* Aura Preview */
+.aura-preview { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; margin-top: 10px; }
+.aura-preview p { margin: 0; font-size: 12px; color: #ccc; }
+.dot { width: 16px; height: 16px; border-radius: 50%; }
+.green { background: #00ffaa; box-shadow: 0 0 10px #00ffaa; }
+.yellow { background: #ffea00; box-shadow: 0 0 10px #ffea00; }
+.red { background: #ff0055; box-shadow: 0 0 10px #ff0055; animation: pulse-red 1s infinite; }
+.white { background: #000; border: 2px solid #fff; position: relative; }
+.rotating::before {
+    content: ''; position: absolute; top: -4px; left: -4px; right: -4px; bottom: -4px;
+    border: 2px dashed #fff; border-radius: 50%; animation: spin 2s linear infinite;
+}
+@keyframes pulse-red { 0% { box-shadow: 0 0 5px #ff0055; } 50% { box-shadow: 0 0 20px #ff0055; } 100% { box-shadow: 0 0 5px #ff0055; } }
+@keyframes spin { 100% { transform: rotate(360deg); } }
