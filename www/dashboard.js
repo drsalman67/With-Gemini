@@ -1,77 +1,53 @@
 (function () {
     const bridge = window.NativeBridge;
-    
-    // UI Elements
     const masterSwitch = document.getElementById('master-switch');
-    const sizeSlider = document.getElementById('btn-size');
-    const sizeVal = document.getElementById('size-val');
     const batteryAura = document.getElementById('battery-aura');
     const chargingFx = document.getElementById('charging-fx');
     const notifPulse = document.getElementById('notif-pulse');
     const appSelector = document.getElementById('app-selector');
 
-    // Load Settings Helper
-    function loadSetting(key, defaultVal, element, isCheckbox) {
+    function loadSetting(key, defaultVal, element) {
         let val = defaultVal;
         if (bridge) val = bridge.getSetting(key, defaultVal);
-        if (isCheckbox) {
-            element.checked = (val === 'true');
-        } else {
-            element.value = val;
-        }
+        element.checked = (val === 'true');
     }
 
-    // Save Settings Helper
     function saveSetting(key, value) {
         if (bridge) bridge.saveSetting(key, value.toString());
     }
 
-    // Initialize all settings
-    loadSetting('master_switch', 'true', masterSwitch, true);
-    loadSetting('btn_size', '60', sizeSlider, false);
-    sizeVal.innerText = sizeSlider.value;
-    loadSetting('battery_aura', 'true', batteryAura, true);
-    loadSetting('charging_fx', 'true', chargingFx, true);
-    loadSetting('notif_pulse', 'true', notifPulse, true);
+    loadSetting('master_switch', 'true', masterSwitch);
+    loadSetting('battery_aura', 'true', batteryAura);
+    loadSetting('charging_fx', 'true', chargingFx);
+    loadSetting('notif_pulse', 'true', notifPulse);
 
-    // Fetch Installed Apps (The Real Deal)
+    // Ultra-Safe App Fetcher
     if (bridge) {
-        try {
+        setTimeout(() => {
             let appsStr = bridge.getApps();
-            let appsList = JSON.parse(appsStr);
-            
-            // Sort alphabetically
-            appsList.sort((a, b) => a.name.localeCompare(b.name));
-            
-            appSelector.innerHTML = '<option value="">-- Select an App --</option>';
-            appsList.forEach(app => {
-                let opt = document.createElement('option');
-                opt.value = app.pkg;
-                opt.textContent = app.name;
-                appSelector.appendChild(opt);
-            });
-
-            // Set previously saved app
-            let savedPkg = bridge.getSetting('shortcut_pkg', '');
-            if (savedPkg) appSelector.value = savedPkg;
-
-        } catch (e) {
-            appSelector.innerHTML = '<option value="">Error loading apps</option>';
-        }
+            if(appsStr) {
+                let appsList = JSON.parse(appsStr);
+                appsList.sort((a, b) => a.name.localeCompare(b.name));
+                appSelector.innerHTML = '<option value="">-- Select an App --</option>';
+                appsList.forEach(app => {
+                    let opt = document.createElement('option');
+                    opt.value = app.pkg;
+                    opt.textContent = app.name;
+                    appSelector.appendChild(opt);
+                });
+                let savedPkg = bridge.getSetting('shortcut_pkg', '');
+                if (savedPkg) appSelector.value = savedPkg;
+            }
+        }, 500); // Thoda delay taake Java bridge ready ho jaye
     }
 
-    // Event Listeners for Saving
     masterSwitch.addEventListener('change', (e) => {
-        saveSetting('master_switch', e.target.checked);
         if(!e.target.checked && bridge) {
-            alert("Overlay Power Disabled. It will stay off on next launch. Closing current overlay...");
-            bridge.closeOverlay();
+            bridge.killService(); // PREMIUM JUGAAD: Instantly marde overlay ko!
+        } else if (e.target.checked && bridge) {
+            saveSetting('master_switch', 'true');
+            alert("Turned ON. Re-open the app to start the overlay!");
         }
-    });
-
-    sizeSlider.addEventListener('input', (e) => {
-        sizeVal.innerText = e.target.value;
-        saveSetting('btn_size', e.target.value);
     });
 
     batteryAura.addEventListener('change', (e) => saveSetting('battery_aura', e.target.checked));
@@ -81,8 +57,7 @@
     appSelector.addEventListener('change', (e) => {
         if(e.target.value) {
             saveSetting('shortcut_pkg', e.target.value);
-            alert("App Locked! Float [+] button will now launch this app.");
+            alert("App Locked! 🔒");
         }
     });
-
 })();

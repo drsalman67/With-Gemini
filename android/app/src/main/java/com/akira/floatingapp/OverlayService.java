@@ -7,7 +7,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -15,9 +14,7 @@ import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.Settings;
@@ -50,7 +47,7 @@ public class OverlayService extends Service {
             getSystemService(NotificationManager.class).createNotificationChannel(channel);
         }
         startForeground(1, new NotificationCompat.Builder(this, "overlay_channel")
-                .setContentTitle("Akira Engine V1.3.0").setContentText("System active").setSmallIcon(android.R.drawable.ic_dialog_info).build());
+                .setContentTitle("Akira Engine V1.3.1").setContentText("Premium Engine Active").setSmallIcon(android.R.drawable.ic_dialog_info).build());
 
         overlayWebView = new WebView(this);
         overlayWebView.setBackgroundColor(Color.TRANSPARENT);
@@ -59,12 +56,12 @@ public class OverlayService extends Service {
         overlayWebView.addJavascriptInterface(new WebAppInterface(), "NativeBridge");
         overlayWebView.loadUrl("file:///android_asset/public/overlay.html");
 
-        // SMART TOUCH AREA: Shuru mein size sirf button jitna (80dp) hoga
+        // FIXED SIZE PREMIUM JUGAAD: No more jumping bugs! Ek hi solid size rahega.
         DisplayMetrics metrics = getResources().getDisplayMetrics();
-        int initialSize = (int) (80 * metrics.density); 
+        int fixedSize = (int) (280 * metrics.density); 
 
         params = new WindowManager.LayoutParams(
-                initialSize, initialSize,
+                fixedSize, fixedSize,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT
@@ -118,7 +115,6 @@ public class OverlayService extends Service {
 
     @Override public IBinder onBind(Intent intent) { return null; }
 
-    // ====== THE GOD TIER BRIDGE ======
     class WebAppInterface {
         @JavascriptInterface
         public void performAction(String action) {
@@ -126,8 +122,6 @@ public class OverlayService extends Service {
                 Intent i = new Intent(Intent.ACTION_MAIN); i.addCategory(Intent.CATEGORY_HOME); i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i);
             } else if (action.equals("settings")) {
                 Intent i = new Intent(Settings.ACTION_SETTINGS); i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i);
-            } else if (action.equals("search")) {
-                Intent i = new Intent(Intent.ACTION_WEB_SEARCH); i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i);
             }
         }
 
@@ -147,53 +141,48 @@ public class OverlayService extends Service {
         }
 
         @JavascriptInterface
-        public void closeOverlay() { stopSelf(); }
-        
-        // 1. DYNAMIC RESIZER (Invisible touch fix)
-        @JavascriptInterface
-        public void resizeWindow(int widthDp, int heightDp) {
-            new Handler(Looper.getMainLooper()).post(() -> {
-                if (overlayWebView != null && windowManager != null) {
-                    DisplayMetrics metrics = getResources().getDisplayMetrics();
-                    params.width = (int) (widthDp * metrics.density);
-                    params.height = (int) (heightDp * metrics.density);
-                    windowManager.updateViewLayout(overlayWebView, params);
-                }
-            });
+        public void killService() { 
+            saveSetting("master_switch", "false");
+            stopSelf(); // Instant Death for Overlay
         }
-
-        // 2. SOS VIBRATOR
+        
         @JavascriptInterface
         public void vibrateSOS() {
             Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
             if (v != null) {
-                long[] pattern = {0, 150, 100, 150, 100, 150, 100, 400, 100, 400, 100, 400, 100, 150, 100, 150, 100, 150}; // S-O-S Pattern
+                long[] pattern = {0, 150, 100, 150, 100, 150, 100, 400, 100, 400, 100, 400, 100, 150, 100, 150, 100, 150};
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     v.vibrate(VibrationEffect.createWaveform(pattern, -1));
                 } else { v.vibrate(pattern, -1); }
             }
         }
 
-        // 3. LIVE APP FETCHER
         @JavascriptInterface
         public String getApps() {
-            PackageManager pm = getPackageManager();
-            List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
             JSONArray list = new JSONArray();
-            for (ApplicationInfo packageInfo : packages) {
-                if (pm.getLaunchIntentForPackage(packageInfo.packageName) != null) {
-                    try {
+            try {
+                PackageManager pm = getPackageManager();
+                List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+                for (ApplicationInfo packageInfo : packages) {
+                    if (pm.getLaunchIntentForPackage(packageInfo.packageName) != null) {
                         JSONObject obj = new JSONObject();
                         obj.put("name", packageInfo.loadLabel(pm).toString());
                         obj.put("pkg", packageInfo.packageName);
                         list.put(obj);
-                    } catch(Exception e){}
+                    }
                 }
+            } catch(Exception e) {
+                // PREMIUM JUGAAD: Agar fail ho toh default OP apps daal do
+                try {
+                    list.put(new JSONObject().put("name", "WhatsApp").put("pkg", "com.whatsapp"));
+                    list.put(new JSONObject().put("name", "YouTube").put("pkg", "com.google.android.youtube"));
+                    list.put(new JSONObject().put("name", "Instagram").put("pkg", "com.instagram.android"));
+                    list.put(new JSONObject().put("name", "Free Fire").put("pkg", "com.dts.freefireth"));
+                } catch(Exception ex){}
             }
             return list.toString();
         }
 
-        // 4. CROSS-MEMORY SETTINGS
         @JavascriptInterface
         public void saveSetting(String key, String value) {
             getSharedPreferences("AkiraPrefs", MODE_PRIVATE).edit().putString(key, value).apply();
