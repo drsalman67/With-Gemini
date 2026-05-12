@@ -1,0 +1,50 @@
+package com.akira.floatingapp;
+
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+
+    private static final int OVERLAY_PERMISSION_REQUEST_CODE = 1001;
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        if (!Settings.canDrawOverlays(this)) {
+            requestOverlayPermission();
+        } else {
+            startOverlayService();
+        }
+    }
+
+    private void requestOverlayPermission() {
+        Intent intent = new Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:" + getPackageName())
+        );
+        startActivityForResult(intent, OVERLAY_PERMISSION_REQUEST_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == OVERLAY_PERMISSION_REQUEST_CODE) {
+            if (Settings.canDrawOverlays(this)) {
+                startOverlayService();
+            }
+        }
+    }
+
+    private void startOverlayService() {
+        Intent serviceIntent = new Intent(this, OverlayService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+    }
+}

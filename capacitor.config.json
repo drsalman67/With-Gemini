@@ -1,0 +1,12 @@
+{
+  "appId": "com.akira.floatingapp",
+  "appName": "With Gemini",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "transparent",
+    "allowMixedContent": true
+  }
+}
