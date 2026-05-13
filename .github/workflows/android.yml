@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Akira Native Engine Build
 on:
   push:
     branches: [ main ]
@@ -8,32 +8,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          
-      - name: set up JDK 21
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '17'
           distribution: 'temurin'
-          cache: gradle
           
-      - name: Install Dependencies
-        run: npm install
+      - name: Build Native APK
+        run: gradle assembleDebug
         
-      - name: Build Web Assets
-        run: mkdir -p www && npx cap sync android
-        
-      - name: Build with Gradle
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug -x lint
-          
-      - name: Upload APK
+      - name: Upload Akira APK
         uses: actions/upload-artifact@v4
         with:
-          name: Akira-Floating-App
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Akira-Native-V2-Phase1
+          path: app/build/outputs/apk/debug/app-debug.apk
